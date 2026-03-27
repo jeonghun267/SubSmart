@@ -1,0 +1,236 @@
+@import "tailwindcss";
+
+:root {
+  /* Backgrounds */
+  --bg-primary: #F5F5F7;
+  --bg-card: #FFFFFF;
+  --bg-elevated: #FFFFFF;
+
+  /* Accent (Toss-style monochromatic blue) */
+  --accent: #3182F6;
+  --accent-soft: #EBF2FF;
+  --accent-hover: #2563EB;
+
+  /* Semantic */
+  --positive: #34D399;
+  --positive-soft: #ECFDF5;
+  --negative: #F43F5E;
+  --negative-soft: #FFF1F2;
+  --warning: #F59E0B;
+  --warning-soft: #FFFBEB;
+
+  /* Text */
+  --text-primary: #111827;
+  --text-secondary: #6B7280;
+  --text-tertiary: #9CA3AF;
+  --text-inverse: #FFFFFF;
+
+  /* Border */
+  --border: #E5E7EB;
+  --border-focus: #3182F6;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
+  --shadow-xl: 0 12px 40px rgba(0, 0, 0, 0.16);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not(.light) {
+    --bg-primary: #0F0F14;
+    --bg-card: #1C1C26;
+    --bg-elevated: #252530;
+
+    --accent: #5B9BF8;
+    --accent-soft: #1A2744;
+    --accent-hover: #7AB3FF;
+
+    --positive: #4ADE80;
+    --positive-soft: #0A2E1A;
+    --negative: #FB7185;
+    --negative-soft: #2E0A14;
+    --warning: #FBBF24;
+    --warning-soft: #2E2206;
+
+    --text-primary: #F3F4F6;
+    --text-secondary: #9CA3AF;
+    --text-tertiary: #6B7280;
+    --text-inverse: #111827;
+
+    --border: #2A2A3C;
+    --border-focus: #5B9BF8;
+
+    --shadow-sm: none;
+    --shadow-md: none;
+    --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.4);
+    --shadow-xl: 0 12px 40px rgba(0, 0, 0, 0.5);
+  }
+}
+
+/* Manual dark mode via .dark class */
+:root.dark {
+  --bg-primary: #0F0F14;
+  --bg-card: #1C1C26;
+  --bg-elevated: #252530;
+
+  --accent: #5B9BF8;
+  --accent-soft: #1A2744;
+  --accent-hover: #7AB3FF;
+
+  --positive: #4ADE80;
+  --positive-soft: #0A2E1A;
+  --negative: #FB7185;
+  --negative-soft: #2E0A14;
+  --warning: #FBBF24;
+  --warning-soft: #2E2206;
+
+  --text-primary: #F3F4F6;
+  --text-secondary: #9CA3AF;
+  --text-tertiary: #6B7280;
+  --text-inverse: #111827;
+
+  --border: #2A2A3C;
+  --border-focus: #5B9BF8;
+
+  --shadow-sm: none;
+  --shadow-md: none;
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.4);
+  --shadow-xl: 0 12px 40px rgba(0, 0, 0, 0.5);
+}
+
+@theme inline {
+  --color-bg-primary: var(--bg-primary);
+  --color-bg-card: var(--bg-card);
+  --color-bg-elevated: var(--bg-elevated);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-hover: var(--accent-hover);
+  --color-positive: var(--positive);
+  --color-positive-soft: var(--positive-soft);
+  --color-negative: var(--negative);
+  --color-negative-soft: var(--negative-soft);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-tertiary: var(--text-tertiary);
+  --color-text-inverse: var(--text-inverse);
+  --color-border: var(--border);
+  --color-border-focus: var(--border-focus);
+  --shadow-sm: var(--shadow-sm);
+  --shadow-md: var(--shadow-md);
+  --shadow-lg: var(--shadow-lg);
+  --shadow-xl: var(--shadow-xl);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+/* ─── Base ─── */
+body {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: var(--font-geist-sans), "Pretendard", -apple-system, BlinkMacSystemFont, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: "tnum"; /* tabular numbers for financial data */
+}
+
+/* ─── Tabular numbers for all monetary values ─── */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ─── Utility: hide scrollbar ─── */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* ─── Safe area for mobile ─── */
+.safe-bottom { padding-bottom: env(safe-area-inset-bottom, 0px); }
+.safe-top { padding-top: env(safe-area-inset-top, 0px); }
+
+/* ─── Press feedback (Toss-style) ─── */
+.pressable {
+  transition: transform 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+}
+.pressable:active {
+  transform: scale(0.97);
+}
+
+/* ─── Skeleton animation ─── */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.skeleton {
+  background: linear-gradient(90deg, var(--border) 25%, var(--bg-elevated) 50%, var(--border) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+  border-radius: 8px;
+}
+
+/* ─── Drag handle for bottom sheets ─── */
+.drag-handle {
+  width: 36px;
+  height: 4px;
+  border-radius: 9999px;
+  background: var(--text-tertiary);
+  margin: 0 auto 16px;
+}
+
+/* ─── Smooth page transitions ─── */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-fade-in-up {
+  animation: fadeInUp 300ms cubic-bezier(0, 0, 0.2, 1) both;
+}
+
+/* ─── Staggered list items ─── */
+.stagger-item {
+  animation: fadeInUp 300ms cubic-bezier(0, 0, 0.2, 1) both;
+}
+.stagger-item:nth-child(1) { animation-delay: 0ms; }
+.stagger-item:nth-child(2) { animation-delay: 40ms; }
+.stagger-item:nth-child(3) { animation-delay: 80ms; }
+.stagger-item:nth-child(4) { animation-delay: 120ms; }
+.stagger-item:nth-child(5) { animation-delay: 160ms; }
+.stagger-item:nth-child(6) { animation-delay: 200ms; }
+.stagger-item:nth-child(7) { animation-delay: 240ms; }
+.stagger-item:nth-child(8) { animation-delay: 280ms; }
+.stagger-item:nth-child(9) { animation-delay: 320ms; }
+.stagger-item:nth-child(10) { animation-delay: 360ms; }
+
+/* ─── Bottom sheet animation ─── */
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+@keyframes sheetUp {
+  from { transform: translateY(40px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.animate-slide-up {
+  animation: slideUp 400ms cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+.animate-fade-in {
+  animation: fadeIn 200ms ease-out both;
+}
+
+/* ─── Number count-up ─── */
+@keyframes countPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
