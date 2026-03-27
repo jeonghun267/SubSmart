@@ -26,11 +26,13 @@ import { useNotifications } from "@/components/NotificationManager";
 import { checkBudgetAlerts } from "@/lib/notifications";
 import Subby from "@/components/Subby";
 import { showToast } from "@/components/Toast";
+import ConfirmDialog from "@/components/ConfirmDialog";
 import MoneyInput from "@/components/MoneyInput";
 
 export default function BudgetPage() {
   const { user: authUser } = useAuth();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [deleteTxConfirm, setDeleteTxConfirm] = useState<string | null>(null);
   const [budgets, setBudgets] = useState<Budget[]>([]);
   const [showAddTx, setShowAddTx] = useState(false);
   const [showAddBudget, setShowAddBudget] = useState(false);
@@ -213,9 +215,10 @@ export default function BudgetPage() {
     loadData();
   }
 
-  async function deleteTx(id: string) {
-    if (!confirm("이 거래를 삭제할까요?")) return;
-    await supabase.from("transactions").delete().eq("id", id);
+  async function confirmDeleteTx() {
+    if (!deleteTxConfirm) return;
+    await supabase.from("transactions").delete().eq("id", deleteTxConfirm);
+    setDeleteTxConfirm(null);
     showToast("거래가 삭제되었습니다.", "success");
     loadData();
   }
@@ -555,7 +558,7 @@ export default function BudgetPage() {
                             {tx.amount.toLocaleString()}원
                           </p>
                           <button
-                            onClick={(e) => { e.stopPropagation(); deleteTx(tx.id); }}
+                            onClick={(e) => { e.stopPropagation(); setDeleteTxConfirm(tx.id); }}
                             className="p-1.5 text-text-tertiary hover:text-negative transition-colors"
                           >
                             <X size={14} />
@@ -733,6 +736,17 @@ export default function BudgetPage() {
           <ChevronRight size={16} className="text-text-tertiary" />
         </Link>
       )}
+
+      <ConfirmDialog
+        open={deleteTxConfirm !== null}
+        title="거래 삭제"
+        message="이 거래를 삭제할까요?"
+        confirmText="삭제"
+        cancelText="취소"
+        variant="danger"
+        onConfirm={confirmDeleteTx}
+        onCancel={() => setDeleteTxConfirm(null)}
+      />
     </div>
   );
 }

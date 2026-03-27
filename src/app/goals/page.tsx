@@ -10,6 +10,7 @@ import Link from "next/link";
 import Subby from "@/components/Subby";
 import { DashboardSkeleton } from "@/components/Skeleton";
 import { isPremium } from "@/lib/premium";
+import { authFetch } from "@/lib/api";
 import MoneyInput from "@/components/MoneyInput";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import { showToast } from "@/components/Toast";
@@ -196,9 +197,8 @@ function GoalsPageInner() {
           .order("date", { ascending: false }).limit(30),
       ]);
 
-      const res = await fetch("/api/ai-insight", {
+      const res = await authFetch("/api/ai-insight", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           subscriptions: subsRes.data,
           transactions: txRes.data,

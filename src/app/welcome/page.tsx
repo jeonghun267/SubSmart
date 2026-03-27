@@ -78,12 +78,6 @@ export default function WelcomePage() {
           시작하기
         </button>
 
-        <p
-          className="text-[11px] text-text-tertiary mt-4 transition-all duration-500"
-          style={{ opacity: step >= 3 ? 1 : 0 }}
-        >
-          가입과 동시에 개인정보 처리방침에 동의합니다
-        </p>
       </div>
     </div>
   );

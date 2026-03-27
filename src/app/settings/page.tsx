@@ -28,6 +28,7 @@ import {
   Crown,
 } from "lucide-react";
 import { canUseAI, recordAIUsage, getRemainingAIUses, isPremium } from "@/lib/premium";
+import { authFetch } from "@/lib/api";
 import Subby from "@/components/Subby";
 
 export default function SettingsPage() {
@@ -137,9 +138,8 @@ export default function SettingsPage() {
         supabase.from("transactions").select("*").eq("user_id", authUser.id).order("date", { ascending: false }).limit(50),
       ]);
 
-      const res = await fetch("/api/ai-insight", {
+      const res = await authFetch("/api/ai-insight", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           subscriptions: subsRes.data,
           transactions: txRes.data,

@@ -1,10 +1,30 @@
 import { NextResponse } from "next/server";
-import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { createClient } from "@supabase/supabase-js";
 
 const FREE_DAILY_LIMIT = 3;
 
+function getSupabaseAdmin() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+}
+
+async function getUserFromRequest(request: Request) {
+  const authHeader = request.headers.get("authorization");
+  if (!authHeader?.startsWith("Bearer ")) return null;
+
+  const token = authHeader.replace("Bearer ", "");
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
+  const { data: { user } } = await supabase.auth.getUser(token);
+  return user;
+}
+
 async function checkAIUsage(userId: string) {
-  const supabase = await createSupabaseServerClient();
+  const supabase = getSupabaseAdmin();
   const today = new Date().toISOString().split("T")[0];
 
   const { data } = await supabase
@@ -14,7 +34,6 @@ async function checkAIUsage(userId: string) {
     .single();
 
   if (!data) {
-    // First time user - create plan record
     await supabase.from("user_plans").insert({
       user_id: userId,
       plan: "free",
@@ -28,7 +47,6 @@ async function checkAIUsage(userId: string) {
     return { allowed: true, plan: "premium", remaining: -1 };
   }
 
-  // Reset counter if new day
   const usage = data.ai_usage_date === today ? data.ai_usage_today : 0;
   if (usage >= FREE_DAILY_LIMIT) {
     return { allowed: false, plan: "free", remaining: 0 };
@@ -38,7 +56,7 @@ async function checkAIUsage(userId: string) {
 }
 
 async function recordAIUsage(userId: string) {
-  const supabase = await createSupabaseServerClient();
+  const supabase = getSupabaseAdmin();
   const today = new Date().toISOString().split("T")[0];
 
   const { data } = await supabase
@@ -67,9 +85,8 @@ export async function POST(request: Request) {
     );
   }
 
-  // Auth check
-  const supabase = await createSupabaseServerClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  // Auth check via Bearer token
+  const user = await getUserFromRequest(request);
   if (!user) {
     return NextResponse.json({ error: "인증이 필요합니다." }, { status: 401 });
   }
@@ -142,7 +159,7 @@ ${categoryText || "지출 내역 없음"}
 
 ## 분석 요청
 다음 항목을 포함하여 300자 이내로 분석해주세요:
-1. 구독 최적화 제안 (불필요하거나 중복된 구독이 있는지)
+1. 구독 최적화 제안
 2. 지출 패턴에서 발견되는 절약 포인트
 3. 월 예산 추천
 4. 한 줄 핵심 조언
@@ -176,7 +193,6 @@ ${categoryText || "지출 내역 없음"}
       );
     }
 
-    // Record usage after successful call
     await recordAIUsage(user.id);
 
     const data = await res.json();

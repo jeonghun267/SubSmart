@@ -1,5 +1,54 @@
 import { NextResponse } from "next/server";
-import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { createClient } from "@supabase/supabase-js";
+
+const FREE_DAILY_LIMIT = 3;
+
+function getSupabaseAdmin() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+}
+
+async function getUserFromRequest(request: Request) {
+  const authHeader = request.headers.get("authorization");
+  if (!authHeader?.startsWith("Bearer ")) return null;
+  const token = authHeader.replace("Bearer ", "");
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
+  const { data: { user } } = await supabase.auth.getUser(token);
+  return user;
+}
+
+async function checkAndRecordUsage(userId: string): Promise<{ allowed: boolean }> {
+  const supabase = getSupabaseAdmin();
+  const today = new Date().toISOString().split("T")[0];
+
+  const { data } = await supabase
+    .from("user_plans")
+    .select("plan, ai_usage_today, ai_usage_date")
+    .eq("user_id", userId)
+    .single();
+
+  if (!data) {
+    await supabase.from("user_plans").insert({
+      user_id: userId, plan: "free", ai_usage_today: 1, ai_usage_date: today,
+    });
+    return { allowed: true };
+  }
+
+  if (data.plan === "premium") return { allowed: true };
+
+  const usage = data.ai_usage_date === today ? data.ai_usage_today : 0;
+  if (usage >= FREE_DAILY_LIMIT) return { allowed: false };
+
+  await supabase.from("user_plans").upsert({
+    user_id: userId, ai_usage_today: usage + 1, ai_usage_date: today,
+  });
+  return { allowed: true };
+}
 
 export async function POST(request: Request) {
   const apiKey = process.env.GEMINI_API_KEY;
@@ -7,11 +56,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "API key not configured" }, { status: 500 });
   }
 
-  // Auth check
-  const supabase = await createSupabaseServerClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getUserFromRequest(request);
   if (!user) {
     return NextResponse.json({ error: "인증이 필요합니다." }, { status: 401 });
+  }
+
+  const { allowed } = await checkAndRecordUsage(user.id);
+  if (!allowed) {
+    return NextResponse.json({ error: "오늘의 무료 AI 분석 횟수를 모두 사용했어요." }, { status: 429 });
   }
 
   try {

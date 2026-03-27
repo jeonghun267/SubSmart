@@ -14,30 +14,8 @@ export default function SignupPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [socialLoading, setSocialLoading] = useState<string | null>(null);
-
-  const handleSocialLogin = async (provider: "kakao" | "google") => {
-    try {
-      setSocialLoading(provider);
-      setError("");
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider,
-        options: {
-          redirectTo: window.location.origin + "/auth/callback",
-        },
-      });
-      if (error) {
-        setError(error.message);
-      }
-    } catch {
-      setError("소셜 로그인 중 오류가 발생했습니다.");
-    } finally {
-      setSocialLoading(null);
-    }
-  };
-
-  const handleKakaoLogin = () => handleSocialLogin("kakao");
-  const handleGoogleLogin = () => handleSocialLogin("google");
+  const [agreeTerms, setAgreeTerms] = useState(false);
+  const [agreePrivacy, setAgreePrivacy] = useState(false);
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -115,9 +93,35 @@ export default function SignupPage() {
             </div>
           )}
 
+          {/* 약관 동의 체크박스 */}
+          <div className="space-y-2.5 mt-2">
+            <label className="flex items-start gap-2.5 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={agreeTerms}
+                onChange={(e) => setAgreeTerms(e.target.checked)}
+                className="mt-0.5 w-4 h-4 rounded accent-accent"
+              />
+              <span className="text-[13px] text-text-secondary">
+                <Link href="/terms" className="text-accent underline">이용약관</Link>에 동의합니다 <span className="text-negative">*</span>
+              </span>
+            </label>
+            <label className="flex items-start gap-2.5 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={agreePrivacy}
+                onChange={(e) => setAgreePrivacy(e.target.checked)}
+                className="mt-0.5 w-4 h-4 rounded accent-accent"
+              />
+              <span className="text-[13px] text-text-secondary">
+                <Link href="/privacy" className="text-accent underline">개인정보처리방침</Link>에 동의합니다 <span className="text-negative">*</span>
+              </span>
+            </label>
+          </div>
+
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || !agreeTerms || !agreePrivacy}
             className="w-full flex items-center justify-center gap-2 py-[14px] bg-accent text-text-inverse font-semibold text-[15px] rounded-[12px] hover:bg-accent-hover disabled:opacity-50 transition-all pressable"
           >
             {loading ? (
@@ -130,8 +134,6 @@ export default function SignupPage() {
             )}
           </button>
         </form>
-
-        {/* TODO: 소셜 로그인 - 카카오/구글 OAuth 연동 후 활성화 */}
 
         <p className="text-center text-[14px] text-text-secondary mt-8">
           이미 계정이 있으신가요?{" "}

@@ -4,53 +4,40 @@
   <title>SubSmart Logo Generator</title>
   <style>
     body { display: flex; flex-direction: column; align-items: center; gap: 20px; padding: 40px; font-family: sans-serif; background: #f5f5f7; }
-    canvas { border: 1px solid #ddd; border-radius: 16px; }
+    canvas { border: 1px solid #ddd; border-radius: 16px; max-width: 100%; }
     button { padding: 12px 32px; background: #3182F6; color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: bold; cursor: pointer; }
     button:hover { background: #2563EB; }
-    .row { display: flex; gap: 20px; }
+    .row { display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; }
+    .item { text-align: center; }
   </style>
 </head>
 <body>
   <h1>SubSmart 로고 생성기</h1>
+
   <div class="row">
-    <div>
+    <div class="item">
       <h3>앱 로고 (600x600)</h3>
       <canvas id="logo600" width="600" height="600"></canvas>
       <br><br>
-      <button onclick="download('logo600', 'subsmart-logo-600.png')">600x600 다운로드</button>
+      <button onclick="download('logo600', 'subsmart-logo-600.png')">다운로드</button>
     </div>
-    <div>
-      <h3>썸네일 (1000x1000)</h3>
+    <div class="item">
+      <h3>정방형 썸네일 (1000x1000)</h3>
       <canvas id="logo1000" width="1000" height="1000"></canvas>
       <br><br>
-      <button onclick="download('logo1000', 'subsmart-thumbnail-1000.png')">1000x1000 다운로드</button>
+      <button onclick="download('logo1000', 'subsmart-thumbnail-1000.png')">다운로드</button>
     </div>
   </div>
 
+  <div class="item" style="margin-top: 20px;">
+    <h3>가로형 썸네일 (1932x828)</h3>
+    <canvas id="banner" width="1932" height="828" style="max-width: 800px;"></canvas>
+    <br><br>
+    <button onclick="download('banner', 'subsmart-banner-1932x828.png')">다운로드</button>
+  </div>
+
   <script>
-    function drawLogo(canvasId, size) {
-      const canvas = document.getElementById(canvasId);
-      const ctx = canvas.getContext('2d');
-      const s = size / 600; // scale factor
-
-      // Background - rounded rect with gradient
-      ctx.fillStyle = '#3182F6';
-      roundRect(ctx, 0, 0, size, size, 80 * s);
-      ctx.fill();
-
-      // Subtle gradient overlay
-      const grad = ctx.createRadialGradient(size * 0.3, size * 0.3, 0, size * 0.5, size * 0.5, size * 0.6);
-      grad.addColorStop(0, 'rgba(255,255,255,0.15)');
-      grad.addColorStop(1, 'rgba(0,0,0,0.05)');
-      roundRect(ctx, 0, 0, size, size, 80 * s);
-      ctx.fillStyle = grad;
-      ctx.fill();
-
-      // Subby character (centered, bigger)
-      const cx = size / 2;
-      const cy = size / 2 - 20 * s;
-      const r = 180 * s;
-
+    function drawSubby(ctx, cx, cy, r) {
       // Coin body
       ctx.beginPath();
       ctx.arc(cx, cy, r, 0, Math.PI * 2);
@@ -63,56 +50,49 @@
       ctx.fillStyle = '#FFEC99';
       ctx.fill();
       ctx.strokeStyle = '#F59E0B';
-      ctx.lineWidth = 3 * s;
+      ctx.lineWidth = r * 0.017;
       ctx.stroke();
 
       // Won symbol watermark
       ctx.fillStyle = 'rgba(245, 158, 11, 0.3)';
-      ctx.font = `bold ${80 * s}px sans-serif`;
+      ctx.font = `bold ${r * 0.44}px sans-serif`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText('₩', cx, cy + 70 * s);
+      ctx.fillText('₩', cx, cy + r * 0.39);
 
-      // Eyes (wink mood)
+      // Eyes
       ctx.strokeStyle = '#1E293B';
-      ctx.lineWidth = 8 * s;
+      ctx.lineWidth = r * 0.044;
       ctx.lineCap = 'round';
 
-      // Left eye - happy arc
+      // Left eye
       ctx.beginPath();
-      ctx.moveTo(cx - 65 * s, cy - 10 * s);
-      ctx.quadraticCurveTo(cx - 65 * s, cy - 40 * s, cx - 35 * s, cy - 40 * s);
-      ctx.quadraticCurveTo(cx - 5 * s, cy - 40 * s, cx - 5 * s, cy - 10 * s);
+      ctx.moveTo(cx - r * 0.36, cy - r * 0.056);
+      ctx.quadraticCurveTo(cx - r * 0.36, cy - r * 0.222, cx - r * 0.194, cy - r * 0.222);
+      ctx.quadraticCurveTo(cx - r * 0.028, cy - r * 0.222, cx - r * 0.028, cy - r * 0.056);
       ctx.stroke();
 
-      // Right eye - wink line
+      // Right eye (wink)
       ctx.beginPath();
-      ctx.moveTo(cx + 15 * s, cy - 10 * s);
-      ctx.lineTo(cx + 65 * s, cy - 10 * s);
+      ctx.moveTo(cx + r * 0.083, cy - r * 0.056);
+      ctx.lineTo(cx + r * 0.361, cy - r * 0.056);
       ctx.stroke();
 
       // Mouth
-      ctx.lineWidth = 6 * s;
+      ctx.lineWidth = r * 0.033;
       ctx.beginPath();
-      ctx.moveTo(cx - 40 * s, cy + 25 * s);
-      ctx.quadraticCurveTo(cx, cy + 60 * s, cx + 40 * s, cy + 25 * s);
+      ctx.moveTo(cx - r * 0.222, cy + r * 0.139);
+      ctx.quadraticCurveTo(cx, cy + r * 0.333, cx + r * 0.222, cy + r * 0.139);
       ctx.stroke();
 
       // Blush
       ctx.fillStyle = 'rgba(252, 165, 165, 0.5)';
       ctx.beginPath();
-      ctx.arc(cx - 85 * s, cy - 2 * s, 18 * s, 0, Math.PI * 2);
+      ctx.arc(cx - r * 0.472, cy - r * 0.011, r * 0.1, 0, Math.PI * 2);
       ctx.fill();
       ctx.beginPath();
-      ctx.arc(cx + 85 * s, cy - 2 * s, 18 * s, 0, Math.PI * 2);
+      ctx.arc(cx + r * 0.472, cy - r * 0.011, r * 0.1, 0, Math.PI * 2);
       ctx.fill();
-
-      // Text "SubSmart" at bottom
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
-      ctx.font = `bold ${52 * s}px -apple-system, BlinkMacSystemFont, sans-serif`;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText('SubSmart', cx, size - 65 * s);
     }
 
     function roundRect(ctx, x, y, w, h, r) {
@@ -129,6 +109,90 @@
       ctx.closePath();
     }
 
+    // ── 정방형 로고 ──
+    function drawLogo(canvasId, size) {
+      const canvas = document.getElementById(canvasId);
+      const ctx = canvas.getContext('2d');
+      const s = size / 600;
+
+      ctx.fillStyle = '#3182F6';
+      roundRect(ctx, 0, 0, size, size, 80 * s);
+      ctx.fill();
+
+      const grad = ctx.createRadialGradient(size * 0.3, size * 0.3, 0, size * 0.5, size * 0.5, size * 0.6);
+      grad.addColorStop(0, 'rgba(255,255,255,0.15)');
+      grad.addColorStop(1, 'rgba(0,0,0,0.05)');
+      roundRect(ctx, 0, 0, size, size, 80 * s);
+      ctx.fillStyle = grad;
+      ctx.fill();
+
+      drawSubby(ctx, size / 2, size / 2 - 20 * s, 180 * s);
+
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+      ctx.font = `bold ${52 * s}px -apple-system, BlinkMacSystemFont, sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('SubSmart', size / 2, size - 65 * s);
+    }
+
+    // ── 가로형 배너 (1932x828) ──
+    function drawBanner() {
+      const canvas = document.getElementById('banner');
+      const ctx = canvas.getContext('2d');
+      const w = 1932, h = 828;
+
+      // Background
+      ctx.fillStyle = '#3182F6';
+      roundRect(ctx, 0, 0, w, h, 40);
+      ctx.fill();
+
+      // Gradient
+      const grad = ctx.createLinearGradient(0, 0, w, h);
+      grad.addColorStop(0, 'rgba(255,255,255,0.12)');
+      grad.addColorStop(1, 'rgba(0,0,0,0.05)');
+      roundRect(ctx, 0, 0, w, h, 40);
+      ctx.fillStyle = grad;
+      ctx.fill();
+
+      // Decorative circles
+      ctx.fillStyle = 'rgba(255,255,255,0.06)';
+      ctx.beginPath(); ctx.arc(w * 0.85, h * 0.15, 200, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(w * 0.1, h * 0.85, 150, 0, Math.PI * 2); ctx.fill();
+
+      // Subby character (left side)
+      drawSubby(ctx, 340, h / 2, 220);
+
+      // Text (right side)
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+      ctx.textAlign = 'left';
+
+      // App name
+      ctx.font = 'bold 72px -apple-system, BlinkMacSystemFont, sans-serif';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('SubSmart', 660, h / 2 - 100);
+
+      // Tagline
+      ctx.font = '42px -apple-system, BlinkMacSystemFont, sans-serif';
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+      ctx.fillText('매달 새는 구독료,', 660, h / 2);
+      ctx.fillText('AI가 찾아서 아껴드려요', 660, h / 2 + 60);
+
+      // Feature pills
+      const pills = ['구독 관리', 'AI 분석', '가계부', '절약 시뮬레이터'];
+      let px = 660;
+      ctx.font = 'bold 28px -apple-system, BlinkMacSystemFont, sans-serif';
+      pills.forEach((text) => {
+        const tw = ctx.measureText(text).width + 36;
+        ctx.fillStyle = 'rgba(255,255,255,0.2)';
+        roundRect(ctx, px, h / 2 + 120, tw, 48, 24);
+        ctx.fill();
+        ctx.fillStyle = 'rgba(255,255,255,0.9)';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(text, px + 18, h / 2 + 144);
+        px += tw + 16;
+      });
+    }
+
     function download(canvasId, filename) {
       const canvas = document.getElementById(canvasId);
       const link = document.createElement('a');
@@ -137,9 +201,10 @@
       link.click();
     }
 
-    // Draw both sizes
+    // Draw all
     drawLogo('logo600', 600);
     drawLogo('logo1000', 1000);
+    drawBanner();
   </script>
 </body>
 </html>

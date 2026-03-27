@@ -13,6 +13,7 @@ import DonutChart from "@/components/DonutChart";
 import { CATEGORIES, getCategoryInfo } from "@/lib/types";
 import { isPremium } from "@/lib/premium";
 import { DashboardSkeleton } from "@/components/Skeleton";
+import { authFetch } from "@/lib/api";
 
 interface Report {
   personality: string;
@@ -100,9 +101,8 @@ export default function ReportPage() {
       setCategoryData(catData);
       setTotalExpense(total);
 
-      const res = await fetch("/api/ai-report", {
+      const res = await authFetch("/api/ai-report", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           subscriptions: subsRes.data,
           transactions: txRes.data,

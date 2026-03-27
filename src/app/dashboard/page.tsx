@@ -5,6 +5,7 @@ import { supabase } from "@/lib/supabase";
 import { Subscription, Transaction, Budget, CATEGORIES, getCategoryInfo } from "@/lib/types";
 import { useAuth } from "@/hooks/useAuth";
 import { advancePastBillingDates } from "@/lib/billing";
+import { authFetch } from "@/lib/api";
 import { format } from "date-fns";
 import { ko } from "date-fns/locale";
 import {
@@ -159,9 +160,8 @@ export default function DashboardPage() {
 
     // Fetch AI tip in background
     setAiTipLoading(true);
-    fetch("/api/ai-insight", {
+    authFetch("/api/ai-insight", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         subscriptions: subs.filter((s: Subscription) => s.is_active),
         transactions: txs,
