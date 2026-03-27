@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>SubSmart Logo Generator</title>
+  <style>
+    body { display: flex; flex-direction: column; align-items: center; gap: 20px; padding: 40px; font-family: sans-serif; background: #f5f5f7; }
+    canvas { border: 1px solid #ddd; border-radius: 16px; }
+    button { padding: 12px 32px; background: #3182F6; color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: bold; cursor: pointer; }
+    button:hover { background: #2563EB; }
+    .row { display: flex; gap: 20px; }
+  </style>
+</head>
+<body>
+  <h1>SubSmart 로고 생성기</h1>
+  <div class="row">
+    <div>
+      <h3>앱 로고 (600x600)</h3>
+      <canvas id="logo600" width="600" height="600"></canvas>
+      <br><br>
+      <button onclick="download('logo600', 'subsmart-logo-600.png')">600x600 다운로드</button>
+    </div>
+    <div>
+      <h3>썸네일 (1000x1000)</h3>
+      <canvas id="logo1000" width="1000" height="1000"></canvas>
+      <br><br>
+      <button onclick="download('logo1000', 'subsmart-thumbnail-1000.png')">1000x1000 다운로드</button>
+    </div>
+  </div>
+
+  <script>
+    function drawLogo(canvasId, size) {
+      const canvas = document.getElementById(canvasId);
+      const ctx = canvas.getContext('2d');
+      const s = size / 600; // scale factor
+
+      // Background - rounded rect with gradient
+      ctx.fillStyle = '#3182F6';
+      roundRect(ctx, 0, 0, size, size, 80 * s);
+      ctx.fill();
+
+      // Subtle gradient overlay
+      const grad = ctx.createRadialGradient(size * 0.3, size * 0.3, 0, size * 0.5, size * 0.5, size * 0.6);
+      grad.addColorStop(0, 'rgba(255,255,255,0.15)');
+      grad.addColorStop(1, 'rgba(0,0,0,0.05)');
+      roundRect(ctx, 0, 0, size, size, 80 * s);
+      ctx.fillStyle = grad;
+      ctx.fill();
+
+      // Subby character (centered, bigger)
+      const cx = size / 2;
+      const cy = size / 2 - 20 * s;
+      const r = 180 * s;
+
+      // Coin body
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      ctx.fillStyle = '#FFD43B';
+      ctx.fill();
+
+      // Inner coin
+      ctx.beginPath();
+      ctx.arc(cx, cy, r * 0.846, 0, Math.PI * 2);
+      ctx.fillStyle = '#FFEC99';
+      ctx.fill();
+      ctx.strokeStyle = '#F59E0B';
+      ctx.lineWidth = 3 * s;
+      ctx.stroke();
+
+      // Won symbol watermark
+      ctx.fillStyle = 'rgba(245, 158, 11, 0.3)';
+      ctx.font = `bold ${80 * s}px sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('₩', cx, cy + 70 * s);
+
+      // Eyes (wink mood)
+      ctx.strokeStyle = '#1E293B';
+      ctx.lineWidth = 8 * s;
+      ctx.lineCap = 'round';
+
+      // Left eye - happy arc
+      ctx.beginPath();
+      ctx.moveTo(cx - 65 * s, cy - 10 * s);
+      ctx.quadraticCurveTo(cx - 65 * s, cy - 40 * s, cx - 35 * s, cy - 40 * s);
+      ctx.quadraticCurveTo(cx - 5 * s, cy - 40 * s, cx - 5 * s, cy - 10 * s);
+      ctx.stroke();
+
+      // Right eye - wink line
+      ctx.beginPath();
+      ctx.moveTo(cx + 15 * s, cy - 10 * s);
+      ctx.lineTo(cx + 65 * s, cy - 10 * s);
+      ctx.stroke();
+
+      // Mouth
+      ctx.lineWidth = 6 * s;
+      ctx.beginPath();
+      ctx.moveTo(cx - 40 * s, cy + 25 * s);
+      ctx.quadraticCurveTo(cx, cy + 60 * s, cx + 40 * s, cy + 25 * s);
+      ctx.stroke();
+
+      // Blush
+      ctx.fillStyle = 'rgba(252, 165, 165, 0.5)';
+      ctx.beginPath();
+      ctx.arc(cx - 85 * s, cy - 2 * s, 18 * s, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(cx + 85 * s, cy - 2 * s, 18 * s, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Text "SubSmart" at bottom
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+      ctx.font = `bold ${52 * s}px -apple-system, BlinkMacSystemFont, sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('SubSmart', cx, size - 65 * s);
+    }
+
+    function roundRect(ctx, x, y, w, h, r) {
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.lineTo(x + w - r, y);
+      ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+      ctx.lineTo(x + w, y + h - r);
+      ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+      ctx.lineTo(x + r, y + h);
+      ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+      ctx.lineTo(x, y + r);
+      ctx.quadraticCurveTo(x, y, x + r, y);
+      ctx.closePath();
+    }
+
+    function download(canvasId, filename) {
+      const canvas = document.getElementById(canvasId);
+      const link = document.createElement('a');
+      link.download = filename;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    }
+
+    // Draw both sizes
+    drawLogo('logo600', 600);
+    drawLogo('logo1000', 1000);
+  </script>
+</body>
+</html>

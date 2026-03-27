@@ -4,57 +4,66 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
-import { Mail, Lock, ArrowRight } from "lucide-react";
+import { Mail, Lock, User, ArrowRight } from "lucide-react";
 import Subby from "@/components/Subby";
 
 export default function LoginPage() {
   const router = useRouter();
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [socialLoading, setSocialLoading] = useState<string | null>(null);
+  const [isNewUser, setIsNewUser] = useState(false);
 
-  const handleSocialLogin = async (provider: "kakao" | "google") => {
-    try {
-      setSocialLoading(provider);
-      setError("");
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider,
-        options: {
-          redirectTo: window.location.origin + "/auth/callback",
-        },
-      });
-      if (error) {
-        setError(error.message);
-      }
-    } catch {
-      setError("소셜 로그인 중 오류가 발생했습니다.");
-    } finally {
-      setSocialLoading(null);
-    }
-  };
-
-  const handleKakaoLogin = () => handleSocialLogin("kakao");
-  const handleGoogleLogin = () => handleSocialLogin("google");
-
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setLoading(true);
 
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    // 먼저 로그인 시도
+    const { error: loginError } = await supabase.auth.signInWithPassword({ email, password });
 
-    if (error) {
-      setError(
-        error.message === "Invalid login credentials"
-          ? "이메일 또는 비밀번호가 올바르지 않습니다."
-          : error.message
-      );
-      setLoading(false);
+    if (!loginError) {
+      router.replace("/dashboard");
       return;
     }
-    router.replace("/dashboard");
+
+    // 로그인 실패 → 계정이 없는 경우 회원가입 모드로 전환
+    if (loginError.message === "Invalid login credentials") {
+      if (!isNewUser) {
+        // 첫 시도: 이름 입력 필드 보여주기
+        setIsNewUser(true);
+        setError("");
+        setLoading(false);
+        return;
+      }
+
+      // 이름까지 입력한 상태: 회원가입 진행
+      if (!name.trim()) {
+        setError("이름을 입력해주세요.");
+        setLoading(false);
+        return;
+      }
+
+      const { error: signupError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: { data: { display_name: name } },
+      });
+
+      if (signupError) {
+        setError(signupError.message);
+        setLoading(false);
+        return;
+      }
+
+      router.replace("/welcome");
+      return;
+    }
+
+    setError(loginError.message);
+    setLoading(false);
   };
 
   return (
@@ -72,7 +81,25 @@ export default function LoginPage() {
         </div>
 
         {/* Form */}
-        <form onSubmit={handleLogin} className="space-y-3.5">
+        <form onSubmit={handleSubmit} className="space-y-3.5">
+          {/* 이름 (새 유저일 때만 표시) */}
+          {isNewUser && (
+            <div className="relative animate-fade-in-up">
+              <User
+                className="absolute left-4 top-1/2 -translate-y-1/2 text-text-tertiary"
+                size={18}
+              />
+              <input
+                type="text"
+                placeholder="이름"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                autoFocus
+                className="w-full pl-12 pr-4 py-[14px] bg-bg-card border border-border rounded-[12px] text-[15px] text-text-primary placeholder:text-text-tertiary focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-border-focus transition-all"
+              />
+            </div>
+          )}
+
           <div className="relative">
             <Mail
               className="absolute left-4 top-1/2 -translate-y-1/2 text-text-tertiary"
@@ -82,7 +109,7 @@ export default function LoginPage() {
               type="email"
               placeholder="이메일"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => { setEmail(e.target.value); setIsNewUser(false); }}
               required
               className="w-full pl-12 pr-4 py-[14px] bg-bg-card border border-border rounded-[12px] text-[15px] text-text-primary placeholder:text-text-tertiary focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-border-focus transition-all"
             />
@@ -95,7 +122,7 @@ export default function LoginPage() {
             />
             <input
               type="password"
-              placeholder="비밀번호"
+              placeholder="비밀번호 (6자 이상)"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
@@ -103,6 +130,12 @@ export default function LoginPage() {
               className="w-full pl-12 pr-4 py-[14px] bg-bg-card border border-border rounded-[12px] text-[15px] text-text-primary placeholder:text-text-tertiary focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-border-focus transition-all"
             />
           </div>
+
+          {isNewUser && !error && (
+            <p className="text-[13px] text-accent px-1">
+              처음이시네요! 이름을 입력하고 시작하세요.
+            </p>
+          )}
 
           {error && (
             <div className="px-4 py-3 bg-negative-soft rounded-[10px]">
@@ -119,77 +152,25 @@ export default function LoginPage() {
               <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
             ) : (
               <>
-                로그인
+                {isNewUser ? "시작하기" : "시작하기"}
                 <ArrowRight size={18} />
               </>
             )}
           </button>
 
           <div className="text-right mt-2">
-            <Link
-              href="/reset-password"
-              className="text-accent text-[13px]"
-            >
+            <Link href="/reset-password" className="text-accent text-[13px]">
               비밀번호 찾기
             </Link>
           </div>
         </form>
 
-        {/* Divider */}
-        <div className="flex items-center gap-3 my-7">
-          <div className="flex-1 h-px bg-border" />
-          <span className="text-text-tertiary text-[13px]">또는</span>
-          <div className="flex-1 h-px bg-border" />
-        </div>
+        {/* TODO: 소셜 로그인 - 카카오/구글 OAuth 연동 후 활성화 */}
 
-        {/* Social Login Buttons */}
-        <div className="space-y-3">
-          <button
-            type="button"
-            onClick={handleKakaoLogin}
-            disabled={socialLoading !== null}
-            className="w-full flex items-center justify-center gap-2 py-[14px] font-semibold text-[15px] rounded-[12px] transition-all pressable disabled:opacity-50"
-            style={{ backgroundColor: "#FEE500", color: "#191919" }}
-          >
-            {socialLoading === "kakao" ? (
-              <div className="w-5 h-5 border-2 border-black/30 border-t-transparent rounded-full animate-spin" />
-            ) : (
-              <>
-                <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                  <path d="M9 1C4.58 1 1 3.79 1 7.21c0 2.17 1.45 4.08 3.63 5.18l-.93 3.41c-.08.29.25.52.5.35l4.06-2.68c.24.02.49.03.74.03 4.42 0 8-2.79 8-6.21S13.42 1 9 1z" fill="#191919"/>
-                </svg>
-                카카오로 시작하기
-              </>
-            )}
-          </button>
-
-          <button
-            type="button"
-            onClick={handleGoogleLogin}
-            disabled={socialLoading !== null}
-            className="w-full flex items-center justify-center gap-2 py-[14px] bg-white border border-border font-semibold text-[15px] rounded-[12px] text-text-primary hover:bg-gray-50 transition-all pressable disabled:opacity-50"
-          >
-            {socialLoading === "google" ? (
-              <div className="w-5 h-5 border-2 border-gray-300 border-t-transparent rounded-full animate-spin" />
-            ) : (
-              <>
-                <svg width="18" height="18" viewBox="0 0 18 18">
-                  <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 01-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/>
-                  <path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 009 18z" fill="#34A853"/>
-                  <path d="M3.964 10.71A5.41 5.41 0 013.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 000 9c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill="#FBBC05"/>
-                  <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 00.957 4.958L3.964 6.29C4.672 4.163 6.656 2.58 9 3.58z" fill="#EA4335"/>
-                </svg>
-                Google로 시작하기
-              </>
-            )}
-          </button>
-        </div>
-
-        <p className="text-center text-[14px] text-text-secondary mt-8">
-          계정이 없으신가요?{" "}
-          <Link href="/signup" className="text-accent font-semibold">
-            회원가입
-          </Link>
+        <p className="text-center text-[12px] text-text-tertiary mt-8 leading-relaxed">
+          시작하기를 누르면{" "}
+          <Link href="/terms" className="underline">이용약관</Link> 및{" "}
+          <Link href="/privacy" className="underline">개인정보처리방침</Link>에 동의합니다.
         </p>
       </div>
     </div>
