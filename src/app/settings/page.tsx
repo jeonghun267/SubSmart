@@ -247,22 +247,7 @@ export default function SettingsPage() {
           <ChevronRight size={16} className="text-text-tertiary shrink-0" />
         </button>
 
-        {/* Premium */}
-        {!userIsPremium && (
-          <button
-            onClick={() => setShowPremium(true)}
-            className="w-full flex items-center gap-3.5 px-5 py-4 text-left hover:bg-bg-primary/50 transition-colors pressable border-b border-border"
-          >
-            <div className="w-8 h-8 rounded-[8px] bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center shrink-0">
-              <Crown size={16} className="text-amber-500" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-[14px] font-medium text-text-primary">프리미엄 업그레이드</p>
-              <p className="text-[12px] text-text-tertiary mt-0.5">무제한 AI 분석 & 더 많은 기능</p>
-            </div>
-            <ChevronRight size={16} className="text-text-tertiary shrink-0" />
-          </button>
-        )}
+        {/* TODO: 프리미엄 결제 연동 후 활성화 */}
 
         {/* Export */}
         <button

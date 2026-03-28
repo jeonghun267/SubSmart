@@ -82,11 +82,7 @@ export default function SimulatorPage() {
             <p className="text-[12px] text-text-tertiary">해지하면 얼마나 아낄 수 있을까?</p>
           </div>
         </div>
-        {!isPremium() && (
-          <span className="px-2 py-1 bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 text-[10px] font-bold rounded-[6px] flex items-center gap-1">
-            <Crown size={10} /> PRO
-          </span>
-        )}
+        {/* TODO: 프리미엄 결제 연동 후 PRO 뱃지 활성화 */}
       </div>
 
       {/* Savings Summary */}

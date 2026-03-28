@@ -10,6 +10,8 @@ import BottomNav from "./BottomNav";
 import BottomSheet from "./BottomSheet";
 import MoneyInput from "./MoneyInput";
 import { showToast } from "./Toast";
+import { addSubbyXp, XP_REWARDS } from "@/lib/subby-level";
+import { completeQuest } from "@/lib/daily-quest";
 import OfflineBanner from "./OfflineBanner";
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
@@ -53,9 +55,18 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
     if (error) {
       showToast("저장 실패", "error");
     } else {
-      showToast(`${quickAmount.toLocaleString()}원 지출 기록 완료`, "success");
+      // XP 보상 + 퀘스트 완료
+      const questResult = completeQuest("recordExpense");
+      if (questResult.justCompleted) {
+        addSubbyXp(XP_REWARDS.RECORD_EXPENSE);
+      }
+      if (questResult.allClear) {
+        addSubbyXp(XP_REWARDS.DAILY_ALL_CLEAR);
+      }
+
+      const xpGained = questResult.justCompleted ? XP_REWARDS.RECORD_EXPENSE + (questResult.allClear ? XP_REWARDS.DAILY_ALL_CLEAR : 0) : 0;
+      showToast(`${quickAmount.toLocaleString()}원 기록 완료${xpGained > 0 ? ` (+${xpGained} XP)` : ""}`, "success");
       setShowQuickAdd(false);
-      // Trigger page refresh by dispatching custom event
       window.dispatchEvent(new Event("subsmart:refresh"));
     }
   }

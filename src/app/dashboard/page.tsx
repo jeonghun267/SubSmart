@@ -31,6 +31,8 @@ import { useNotifications } from "@/components/NotificationManager";
 import { checkBillingAlerts } from "@/lib/notifications";
 import Onboarding, { hasSeenOnboarding } from "@/components/Onboarding";
 import Subby from "@/components/Subby";
+import { getSubbyXp, getSubbyLevel, getXpToNextLevel, getSubbyLevelInfo, addSubbyXp, XP_REWARDS } from "@/lib/subby-level";
+import { getDailyQuests, completeQuest } from "@/lib/daily-quest";
 
 export default function DashboardPage() {
   const { user: authUser } = useAuth();
@@ -45,10 +47,25 @@ export default function DashboardPage() {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showNotiSheet, setShowNotiSheet] = useState(false);
   const [streak, setStreak] = useState(0);
+  const [subbyXp, setSubbyXp] = useState(0);
+  const [subbyLevel, setSubbyLevel] = useState(1);
+  const [quests, setQuests] = useState(getDailyQuests());
+  const [showLevelUp, setShowLevelUp] = useState(false);
   const { sendNotification, enabled: notiEnabled, enableNotifications } = useNotifications();
 
   useEffect(() => {
     if (!hasSeenOnboarding()) setShowOnboarding(true);
+    // Load XP
+    setSubbyXp(getSubbyXp());
+    setSubbyLevel(getSubbyLevel());
+    // Complete "app open" quest
+    const result = completeQuest("appOpen");
+    setQuests(result.quests);
+    if (result.justCompleted) {
+      const xpResult = addSubbyXp(XP_REWARDS.APP_OPEN);
+      setSubbyXp(xpResult.newXp);
+      setSubbyLevel(xpResult.newLevel);
+    }
   }, []);
 
   useEffect(() => {
@@ -256,7 +273,17 @@ export default function DashboardPage() {
   const dailyBudget = totalBudget > 0 && remainingDays > 0 ? Math.round(budgetRemaining / remainingDays) : 0;
 
   // Subby mood based on streak
-  const subbyMood = streak >= 7 ? "happy" : streak >= 3 ? "wink" : streak >= 1 ? "thinking" : "worried";
+  // Subby mood: level-up celebration > streak-based > quest-based
+  const subbyMood: "happy" | "worried" | "thinking" | "wink" | "sleepy" | "celebration" =
+    showLevelUp ? "celebration" :
+    streak >= 7 ? "happy" :
+    streak >= 3 ? "wink" :
+    streak >= 1 ? "thinking" :
+    streak === 0 && subbyXp > 0 ? "sleepy" :
+    "worried";
+
+  const xpProgress = getXpToNextLevel(subbyXp);
+  const levelInfo = getSubbyLevelInfo(subbyLevel);
 
   // Better center value for donut
   function formatShortAmount(n: number): string {
@@ -276,7 +303,7 @@ export default function DashboardPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Subby size={36} mood={subbyMood} />
+          <Subby size={36} mood={subbyMood} level={subbyLevel} />
           <div>
             <p className="text-text-tertiary text-[13px]">안녕하세요,</p>
             <h1 className="text-[22px] font-bold text-text-primary mt-0.5 truncate max-w-[140px]">
@@ -302,6 +329,73 @@ export default function DashboardPage() {
               </span>
             )}
           </button>
+        </div>
+      </div>
+
+      {/* Daily Quest Card */}
+      <div className="bg-bg-card rounded-[16px] p-4 border border-border">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <Subby size={28} mood={subbyMood} level={subbyLevel} />
+            <div>
+              <p className="text-[13px] font-semibold text-text-primary">오늘의 미션</p>
+              <p className="text-[10px] text-text-tertiary">Lv.{subbyLevel} {levelInfo.name}</p>
+            </div>
+          </div>
+          <div className="text-right">
+            <p className="text-[11px] font-bold text-accent tabular-nums">{subbyXp} XP</p>
+          </div>
+        </div>
+
+        {/* Quest items */}
+        <div className="space-y-2">
+          <div className={`flex items-center gap-2.5 px-3 py-2 rounded-[10px] ${quests.appOpen ? "bg-positive-soft" : "bg-bg-primary"}`}>
+            <span className="text-[14px]">{quests.appOpen ? "✅" : "⬜"}</span>
+            <span className={`text-[12px] ${quests.appOpen ? "text-positive font-medium line-through" : "text-text-secondary"}`}>앱 열기</span>
+            <span className="text-[10px] text-text-tertiary ml-auto">+{XP_REWARDS.APP_OPEN} XP</span>
+          </div>
+          <div className={`flex items-center gap-2.5 px-3 py-2 rounded-[10px] ${quests.recordExpense ? "bg-positive-soft" : "bg-bg-primary"}`}>
+            <span className="text-[14px]">{quests.recordExpense ? "✅" : "⬜"}</span>
+            <span className={`text-[12px] ${quests.recordExpense ? "text-positive font-medium line-through" : "text-text-secondary"}`}>지출 1건 기록하기</span>
+            <span className="text-[10px] text-text-tertiary ml-auto">+{XP_REWARDS.RECORD_EXPENSE} XP</span>
+          </div>
+          <div
+            className={`flex items-center gap-2.5 px-3 py-2 rounded-[10px] ${quests.readTip ? "bg-positive-soft" : "bg-bg-primary"} ${!quests.readTip ? "pressable cursor-pointer" : ""}`}
+            onClick={() => {
+              if (!quests.readTip) {
+                const result = completeQuest("readTip");
+                setQuests(result.quests);
+                if (result.justCompleted) {
+                  const xpResult = addSubbyXp(XP_REWARDS.READ_TIP);
+                  setSubbyXp(xpResult.newXp);
+                  if (xpResult.leveledUp) { setSubbyLevel(xpResult.newLevel); setShowLevelUp(true); setTimeout(() => setShowLevelUp(false), 2000); }
+                }
+                if (result.allClear) {
+                  const bonus = addSubbyXp(XP_REWARDS.DAILY_ALL_CLEAR);
+                  setSubbyXp(bonus.newXp);
+                  if (bonus.leveledUp) { setSubbyLevel(bonus.newLevel); setShowLevelUp(true); setTimeout(() => setShowLevelUp(false), 2000); }
+                }
+              }
+            }}
+          >
+            <span className="text-[14px]">{quests.readTip ? "✅" : "⬜"}</span>
+            <span className={`text-[12px] ${quests.readTip ? "text-positive font-medium line-through" : "text-text-secondary"}`}>AI 절약 팁 읽기</span>
+            <span className="text-[10px] text-text-tertiary ml-auto">+{XP_REWARDS.READ_TIP} XP</span>
+          </div>
+        </div>
+
+        {/* XP Progress bar */}
+        <div className="mt-3">
+          <div className="flex justify-between text-[10px] text-text-tertiary mb-1">
+            <span>{quests.appOpen && quests.recordExpense && quests.readTip ? "🎉 올클리어!" : `${[quests.appOpen, quests.recordExpense, quests.readTip].filter(Boolean).length}/3 완료`}</span>
+            <span>Lv.{subbyLevel} → Lv.{subbyLevel + 1}까지 {xpProgress.needed - xpProgress.current} XP</span>
+          </div>
+          <div className="w-full h-2 bg-bg-primary rounded-full overflow-hidden">
+            <div
+              className="h-full rounded-full bg-accent transition-all duration-500"
+              style={{ width: `${xpProgress.progress}%` }}
+            />
+          </div>
         </div>
       </div>
 

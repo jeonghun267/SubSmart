@@ -229,11 +229,7 @@ function GoalsPageInner() {
           <h1 className="text-[20px] font-bold text-text-primary">목표 저축</h1>
         </div>
         <div className="flex items-center gap-2">
-          {!isPremium() && (
-            <span className="px-2 py-1 bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 text-[10px] font-bold rounded-[6px] flex items-center gap-1">
-              <Crown size={10} /> PRO
-            </span>
-          )}
+          {/* TODO: 프리미엄 결제 연동 후 PRO 뱃지 활성화 */}
           <button
             onClick={() => { setEditingGoal(null); resetForm(); setShowAdd(true); }}
             className="flex items-center gap-1 px-3 py-2 bg-accent text-text-inverse text-[13px] font-semibold rounded-[10px] pressable"
