@@ -31,8 +31,11 @@ import { useNotifications } from "@/components/NotificationManager";
 import { checkBillingAlerts } from "@/lib/notifications";
 import Onboarding, { hasSeenOnboarding } from "@/components/Onboarding";
 import Subby from "@/components/Subby";
-import { getSubbyXp, getSubbyLevel, getXpToNextLevel, getSubbyLevelInfo, addSubbyXp, XP_REWARDS } from "@/lib/subby-level";
-import { getDailyQuests, completeQuest } from "@/lib/daily-quest";
+import { getSubbyXp, getSubbyLevel, getXpToNextLevel, getSubbyLevelInfo } from "@/lib/subby-level";
+import { getDailyQuests, completeQuestWithReward } from "@/lib/daily-quest";
+import { recordStat } from "@/lib/subby-stats";
+import { getTodayQuests } from "@/lib/quest-pool";
+import type { Quest } from "@/lib/quest-pool";
 
 export default function DashboardPage() {
   const { user: authUser } = useAuth();
@@ -50,6 +53,7 @@ export default function DashboardPage() {
   const [subbyXp, setSubbyXp] = useState(0);
   const [subbyLevel, setSubbyLevel] = useState(1);
   const [quests, setQuests] = useState(getDailyQuests());
+  const [todayQuests, setTodayQuests] = useState<Quest[]>([]);
   const [showLevelUp, setShowLevelUp] = useState(false);
   const { sendNotification, enabled: notiEnabled, enableNotifications } = useNotifications();
 
@@ -58,22 +62,32 @@ export default function DashboardPage() {
     // Load XP
     setSubbyXp(getSubbyXp());
     setSubbyLevel(getSubbyLevel());
-    // Complete "app open" quest
-    const result = completeQuest("appOpen");
+    // Load today's quests from pool
+    setTodayQuests(getTodayQuests());
+    // Complete "app open" quest (auto) + record daily active
+    recordStat("dayActive");
+    const result = completeQuestWithReward("app_open");
     setQuests(result.quests);
-    if (result.justCompleted) {
-      const xpResult = addSubbyXp(XP_REWARDS.APP_OPEN);
-      setSubbyXp(xpResult.newXp);
-      setSubbyLevel(xpResult.newLevel);
-    }
+    setSubbyXp(result.newXp || getSubbyXp());
+    setSubbyLevel(result.newLevel || getSubbyLevel());
+    if (result.leveledUp) { setShowLevelUp(true); setTimeout(() => setShowLevelUp(false), 2000); }
   }, []);
 
   useEffect(() => {
     if (!authUser) return;
     loadData();
     const handleRefresh = () => loadData();
+    const handleQuestUpdate = () => {
+      setQuests(getDailyQuests());
+      setSubbyXp(getSubbyXp());
+      setSubbyLevel(getSubbyLevel());
+    };
     window.addEventListener("subsmart:refresh", handleRefresh);
-    return () => window.removeEventListener("subsmart:refresh", handleRefresh);
+    window.addEventListener("subsmart:quest-update", handleQuestUpdate);
+    return () => {
+      window.removeEventListener("subsmart:refresh", handleRefresh);
+      window.removeEventListener("subsmart:quest-update", handleQuestUpdate);
+    };
   }, [authUser]);
 
   async function loadData() {
@@ -167,6 +181,20 @@ export default function DashboardPage() {
       }
     }
     setStreak(streakCount);
+
+    // streak stats 기록 + streak_7 퀘스트 자동완료
+    if (streakCount > 0) {
+      recordStat("streak", streakCount);
+    }
+    if (streakCount >= 7) {
+      const streakResult = completeQuestWithReward("streak_7");
+      if (streakResult.xpGained > 0) {
+        setSubbyXp(streakResult.newXp);
+        setSubbyLevel(streakResult.newLevel);
+        setQuests(streakResult.quests);
+        if (streakResult.leveledUp) { setShowLevelUp(true); setTimeout(() => setShowLevelUp(false), 2000); }
+      }
+    }
 
     setLoading(false);
 
@@ -342,52 +370,48 @@ export default function DashboardPage() {
               <p className="text-[10px] text-text-tertiary">Lv.{subbyLevel} {levelInfo.name}</p>
             </div>
           </div>
-          <div className="text-right">
-            <p className="text-[11px] font-bold text-accent tabular-nums">{subbyXp} XP</p>
-          </div>
+          <Link
+            href="/subby-home"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 bg-accent-soft rounded-[10px] pressable"
+          >
+            <span className="text-[11px] font-bold text-accent tabular-nums">{subbyXp} XP</span>
+            <ChevronRight size={12} className="text-accent" />
+          </Link>
         </div>
 
         {/* Quest items */}
         <div className="space-y-2">
-          <div className={`flex items-center gap-2.5 px-3 py-2 rounded-[10px] ${quests.appOpen ? "bg-positive-soft" : "bg-bg-primary"}`}>
-            <span className="text-[14px]">{quests.appOpen ? "✅" : "⬜"}</span>
-            <span className={`text-[12px] ${quests.appOpen ? "text-positive font-medium line-through" : "text-text-secondary"}`}>앱 열기</span>
-            <span className="text-[10px] text-text-tertiary ml-auto">+{XP_REWARDS.APP_OPEN} XP</span>
-          </div>
-          <div className={`flex items-center gap-2.5 px-3 py-2 rounded-[10px] ${quests.recordExpense ? "bg-positive-soft" : "bg-bg-primary"}`}>
-            <span className="text-[14px]">{quests.recordExpense ? "✅" : "⬜"}</span>
-            <span className={`text-[12px] ${quests.recordExpense ? "text-positive font-medium line-through" : "text-text-secondary"}`}>지출 1건 기록하기</span>
-            <span className="text-[10px] text-text-tertiary ml-auto">+{XP_REWARDS.RECORD_EXPENSE} XP</span>
-          </div>
-          <div
-            className={`flex items-center gap-2.5 px-3 py-2 rounded-[10px] ${quests.readTip ? "bg-positive-soft" : "bg-bg-primary"} ${!quests.readTip ? "pressable cursor-pointer" : ""}`}
-            onClick={() => {
-              if (!quests.readTip) {
-                const result = completeQuest("readTip");
-                setQuests(result.quests);
-                if (result.justCompleted) {
-                  const xpResult = addSubbyXp(XP_REWARDS.READ_TIP);
-                  setSubbyXp(xpResult.newXp);
-                  if (xpResult.leveledUp) { setSubbyLevel(xpResult.newLevel); setShowLevelUp(true); setTimeout(() => setShowLevelUp(false), 2000); }
-                }
-                if (result.allClear) {
-                  const bonus = addSubbyXp(XP_REWARDS.DAILY_ALL_CLEAR);
-                  setSubbyXp(bonus.newXp);
-                  if (bonus.leveledUp) { setSubbyLevel(bonus.newLevel); setShowLevelUp(true); setTimeout(() => setShowLevelUp(false), 2000); }
-                }
-              }
-            }}
-          >
-            <span className="text-[14px]">{quests.readTip ? "✅" : "⬜"}</span>
-            <span className={`text-[12px] ${quests.readTip ? "text-positive font-medium line-through" : "text-text-secondary"}`}>AI 절약 팁 읽기</span>
-            <span className="text-[10px] text-text-tertiary ml-auto">+{XP_REWARDS.READ_TIP} XP</span>
-          </div>
+          {todayQuests.map((quest) => {
+            const done = quests.completedIds.includes(quest.id);
+            const isManual = quest.checkType === "manual" || quest.checkType === "page-visit";
+            return (
+              <div
+                key={quest.id}
+                className={`flex items-center gap-2.5 px-3 py-2 rounded-[10px] ${done ? "bg-positive-soft" : "bg-bg-primary"} ${!done && isManual ? "pressable cursor-pointer" : ""}`}
+                onClick={() => {
+                  if (!done && isManual) {
+                    const r = completeQuestWithReward(quest.id);
+                    setQuests(r.quests);
+                    if (r.xpGained > 0) { setSubbyXp(r.newXp); setSubbyLevel(r.newLevel); }
+                    if (r.leveledUp) { setShowLevelUp(true); setTimeout(() => setShowLevelUp(false), 2000); }
+                  }
+                }}
+              >
+                <span className="text-[14px]">{done ? "✅" : "⬜"}</span>
+                <div className="flex flex-col min-w-0">
+                  <span className={`text-[12px] ${done ? "text-positive font-medium line-through" : "text-text-secondary"}`}>{quest.name}</span>
+                  {!done && <span className="text-[10px] text-text-tertiary truncate">{quest.description}</span>}
+                </div>
+                <span className="text-[10px] text-text-tertiary ml-auto whitespace-nowrap">+{quest.xp} XP</span>
+              </div>
+            );
+          })}
         </div>
 
         {/* XP Progress bar */}
         <div className="mt-3">
           <div className="flex justify-between text-[10px] text-text-tertiary mb-1">
-            <span>{quests.appOpen && quests.recordExpense && quests.readTip ? "🎉 올클리어!" : `${[quests.appOpen, quests.recordExpense, quests.readTip].filter(Boolean).length}/3 완료`}</span>
+            <span>{quests.selectedIds.length > 0 && quests.selectedIds.every((id) => quests.completedIds.includes(id)) ? "🎉 올클리어!" : `${quests.completedIds.filter((id) => quests.selectedIds.includes(id)).length}/${quests.selectedIds.length} 완료`}</span>
             <span>Lv.{subbyLevel} → Lv.{subbyLevel + 1}까지 {xpProgress.needed - xpProgress.current} XP</span>
           </div>
           <div className="w-full h-2 bg-bg-primary rounded-full overflow-hidden">

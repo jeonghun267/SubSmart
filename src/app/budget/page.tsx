@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { Transaction, Budget, CATEGORIES, CategorySummary, getCategoryInfo } from "@/lib/types";
 import { useAuth } from "@/hooks/useAuth";
+import { usePageQuest } from "@/hooks/usePageQuest";
 import { format } from "date-fns";
 import { ko } from "date-fns/locale";
 import {
@@ -30,6 +31,7 @@ import ConfirmDialog from "@/components/ConfirmDialog";
 import MoneyInput from "@/components/MoneyInput";
 
 export default function BudgetPage() {
+  usePageQuest("/budget");
   const { user: authUser } = useAuth();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [deleteTxConfirm, setDeleteTxConfirm] = useState<string | null>(null);

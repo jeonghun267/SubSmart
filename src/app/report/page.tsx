@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
+import { usePageQuest } from "@/hooks/usePageQuest";
 import { format } from "date-fns";
 import { ko } from "date-fns/locale";
 import { ArrowLeft, TrendingUp, TrendingDown, Minus, Crown, RefreshCw, ChevronRight } from "lucide-react";
@@ -28,6 +29,7 @@ interface Report {
 }
 
 export default function ReportPage() {
+  usePageQuest("/report");
   const router = useRouter();
   const { user: authUser } = useAuth();
   const [report, setReport] = useState<Report | null>(null);

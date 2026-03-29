@@ -10,8 +10,7 @@ import BottomNav from "./BottomNav";
 import BottomSheet from "./BottomSheet";
 import MoneyInput from "./MoneyInput";
 import { showToast } from "./Toast";
-import { addSubbyXp, XP_REWARDS } from "@/lib/subby-level";
-import { completeQuest } from "@/lib/daily-quest";
+import { completeQuestWithReward, incrementRecordCount } from "@/lib/daily-quest";
 import OfflineBanner from "./OfflineBanner";
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
@@ -55,16 +54,14 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
     if (error) {
       showToast("저장 실패", "error");
     } else {
-      // XP 보상 + 퀘스트 완료
-      const questResult = completeQuest("recordExpense");
-      if (questResult.justCompleted) {
-        addSubbyXp(XP_REWARDS.RECORD_EXPENSE);
+      // XP 보상 + 퀘스트 완료 (지출 기록)
+      const count = incrementRecordCount();
+      const r1 = completeQuestWithReward("record_1");
+      let xpGained = r1.xpGained;
+      if (count >= 3) {
+        const r3 = completeQuestWithReward("record_3");
+        xpGained += r3.xpGained;
       }
-      if (questResult.allClear) {
-        addSubbyXp(XP_REWARDS.DAILY_ALL_CLEAR);
-      }
-
-      const xpGained = questResult.justCompleted ? XP_REWARDS.RECORD_EXPENSE + (questResult.allClear ? XP_REWARDS.DAILY_ALL_CLEAR : 0) : 0;
       showToast(`${quickAmount.toLocaleString()}원 기록 완료${xpGained > 0 ? ` (+${xpGained} XP)` : ""}`, "success");
       setShowQuickAdd(false);
       window.dispatchEvent(new Event("subsmart:refresh"));

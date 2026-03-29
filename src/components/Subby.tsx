@@ -1,7 +1,7 @@
 "use client";
 
 // Subby - SubSmart mascot with level system
-type SubbyMood = "happy" | "worried" | "thinking" | "wink" | "sleepy" | "celebration";
+type SubbyMood = "happy" | "worried" | "thinking" | "wink" | "sleepy" | "celebration" | "proud" | "shocked" | "love" | "rich";
 
 interface SubbyProps {
   size?: number;
@@ -18,6 +18,10 @@ export default function Subby({ size = 64, mood = "happy", level = 1, className 
     wink: "M 18 20 Q 18 17, 21 17 Q 24 17, 24 20 M 32 20 L 38 20",
     sleepy: "M 18 21 L 24 21 M 32 21 L 38 21",
     celebration: "M 18 18 Q 18 15, 21 15 Q 24 15, 24 18 M 32 18 Q 32 15, 35 15 Q 38 15, 38 18",
+    proud: "M 18 18 Q 18 15, 21 15 Q 24 15, 24 18 M 32 18 Q 32 15, 35 15 Q 38 15, 38 18",
+    shocked: "M 17 18 A 4 4 0 1 1 25 18 A 4 4 0 1 1 17 18 M 31 18 A 4 4 0 1 1 39 18 A 4 4 0 1 1 31 18",
+    love: "M 17 19 L 21 15 L 25 19 L 21 23 Z M 31 19 L 35 15 L 39 19 L 35 23 Z",
+    rich: "M 16 20 L 26 20 M 30 20 L 40 20",
   };
 
   const mouths: Record<SubbyMood, string> = {
@@ -27,6 +31,10 @@ export default function Subby({ size = 64, mood = "happy", level = 1, className 
     wink: "M 22 28 Q 28 33, 34 28",
     sleepy: "M 25 30 Q 28 31, 31 30",
     celebration: "M 20 27 Q 28 35, 36 27",
+    proud: "M 22 27 Q 28 33, 34 27",
+    shocked: "M 24 28 A 4 4 0 1 1 32 28 A 4 4 0 1 1 24 28",
+    love: "M 22 28 Q 28 33, 34 28",
+    rich: "M 22 28 Q 28 33, 34 28",
   };
 
   // Level-based colors
@@ -129,7 +137,7 @@ export default function Subby({ size = 64, mood = "happy", level = 1, className 
       />
 
       {/* Blush */}
-      {(mood === "happy" || mood === "wink" || mood === "celebration") && (
+      {(mood === "happy" || mood === "wink" || mood === "celebration" || mood === "proud" || mood === "love" || mood === "rich") && (
         <>
           <circle cx="16" cy="25" r="3" fill="#FCA5A5" opacity="0.5" />
           <circle cx="40" cy="25" r="3" fill="#FCA5A5" opacity="0.5" />
@@ -151,6 +159,54 @@ export default function Subby({ size = 64, mood = "happy", level = 1, className 
         <g transform="translate(38, 8) rotate(30)">
           <circle cx="0" cy="0" r="5" stroke="#3182F6" strokeWidth="1.5" fill="none" />
           <line x1="3.5" y1="3.5" x2="8" y2="8" stroke="#3182F6" strokeWidth="1.5" strokeLinecap="round" />
+        </g>
+      )}
+
+      {/* Proud: sparkle stars around eyes */}
+      {mood === "proud" && (
+        <>
+          <polygon points="10,14 11,11 12,14 15,15 12,16 11,19 10,16 7,15" fill="#FCD34D" opacity="0.9">
+            <animate attributeName="opacity" values="0.5;1;0.5" dur="1.2s" repeatCount="indefinite" />
+          </polygon>
+          <polygon points="44,14 45,11 46,14 49,15 46,16 45,19 44,16 41,15" fill="#FCD34D" opacity="0.9">
+            <animate attributeName="opacity" values="0.5;1;0.5" dur="1.2s" repeatCount="indefinite" begin="0.3s" />
+          </polygon>
+          <text x="38" y="38" fontSize="8">👍</text>
+        </>
+      )}
+
+      {/* Shocked: sweat drop */}
+      {mood === "shocked" && (
+        <g>
+          <path d="M 42 10 Q 44 14, 42 17 Q 40 14, 42 10" fill="#60A5FA" opacity="0.7" />
+          <text x="6" y="12" fontSize="7" opacity="0.6">!</text>
+          <text x="44" y="12" fontSize="7" opacity="0.6">!</text>
+        </g>
+      )}
+
+      {/* Love: heart eyes fill + floating hearts */}
+      {mood === "love" && (
+        <>
+          <path d={eyes.love} fill="#F43F5E" stroke="none" />
+          <text x="4" y="10" fontSize="6" opacity="0.6">❤</text>
+          <text x="44" y="8" fontSize="5" opacity="0.5">
+            <animate attributeName="y" values="8;4;8" dur="2s" repeatCount="indefinite" />
+            ❤
+          </text>
+          <text x="48" y="44" fontSize="4" opacity="0.4">❤</text>
+        </>
+      )}
+
+      {/* Rich: sunglasses bar */}
+      {mood === "rich" && (
+        <g>
+          <rect x="14" y="16" width="13" height="6" rx="2" fill="#1E293B" opacity="0.85" />
+          <rect x="29" y="16" width="13" height="6" rx="2" fill="#1E293B" opacity="0.85" />
+          <line x1="27" y1="19" x2="29" y2="19" stroke="#1E293B" strokeWidth="1.5" />
+          <line x1="14" y1="19" x2="10" y2="17" stroke="#1E293B" strokeWidth="1.2" />
+          <line x1="42" y1="19" x2="46" y2="17" stroke="#1E293B" strokeWidth="1.2" />
+          <rect x="15" y="17" width="11" height="4" rx="1" fill="#3B82F6" opacity="0.3" />
+          <rect x="30" y="17" width="11" height="4" rx="1" fill="#3B82F6" opacity="0.3" />
         </g>
       )}
 

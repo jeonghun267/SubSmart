@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { Subscription, CATEGORIES, POPULAR_SUBSCRIPTIONS, getCategoryInfo } from "@/lib/types";
 import { useAuth } from "@/hooks/useAuth";
+import { usePageQuest } from "@/hooks/usePageQuest";
 import { advancePastBillingDates } from "@/lib/billing";
 import { format } from "date-fns";
 import {
@@ -24,6 +25,7 @@ import Subby from "@/components/Subby";
 import { showToast } from "@/components/Toast";
 
 export default function SubscriptionsPage() {
+  usePageQuest("/subscriptions");
   const { user: authUser } = useAuth();
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [showAdd, setShowAdd] = useState(false);

@@ -1,13 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import Subby from "@/components/Subby";
 
 export default function Home() {
   const router = useRouter();
-  const [checking, setChecking] = useState(true);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -16,13 +15,10 @@ export default function Home() {
       } else {
         router.replace("/login");
       }
-      setChecking(false);
     });
   }, [router]);
 
-  if (!checking) return null;
-
-  // 로딩 스플래시
+  // 항상 스플래시 표시 (리다이렉트될 때까지)
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-bg-primary">
       <Subby size={72} mood="happy" />
