@@ -1,29 +1,62 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronRight } from "lucide-react";
 import Subby from "@/components/Subby";
 
 const ONBOARDING_KEY = "subsmart_onboarded";
 
 const slides = [
   {
-    emoji: "💳",
-    title: "구독을 한눈에",
-    desc: "넷플릭스, 유튜브 프리미엄 등\n모든 구독을 한 곳에서 관리하세요",
-    color: "#3182F6",
+    bg: "#3182F615",
+    accent: "#3182F6",
+    visual: (
+      <div className="w-[100px] h-[100px] rounded-[28px] bg-[#3182F615] flex items-center justify-center">
+        <span className="text-[56px]">💳</span>
+      </div>
+    ),
+    badge: "구독 관리",
+    title: "내 구독,\n다 알고 있어요?",
+    desc: "넷플릭스, 유튜브 프리미엄, 쿠팡 로켓와우...\n평균 5만원이 매달 자동으로 나가고 있어요.",
+    highlight: "한 곳에서 전부 확인하세요",
   },
   {
-    emoji: "📊",
-    title: "스마트 가계부",
-    desc: "수입과 지출을 기록하고\n카테고리별 예산을 설정하세요",
-    color: "#10B981",
+    bg: "#F59E0B15",
+    accent: "#F59E0B",
+    visual: (
+      <div className="w-[100px] h-[100px] rounded-[28px] bg-[#F59E0B15] flex items-center justify-center">
+        <span className="text-[56px]">🔔</span>
+      </div>
+    ),
+    badge: "결제일 알림",
+    title: "결제일 깜빡하면\n그냥 날아가요",
+    desc: "구독 결제일을 미리 알려드려요.\n취소 타이밍을 놓치지 마세요.",
+    highlight: "3일 전 알림으로 미리 대비",
   },
   {
-    emoji: "✨",
-    title: "AI가 분석해드려요",
-    desc: "Gemini AI가 소비 패턴을 분석해\n맞춤 절약 팁을 알려드려요",
-    color: "#F59E0B",
+    bg: "#10B98115",
+    accent: "#10B981",
+    visual: (
+      <div className="w-[100px] h-[100px] rounded-[28px] bg-[#10B98115] flex items-center justify-center">
+        <Subby size={64} mood="thinking" />
+      </div>
+    ),
+    badge: "AI 분석",
+    title: "AI가 소비를\n코치해드려요",
+    desc: "Gemini AI가 내 지출 패턴을 분석해\n맞춤 절약 팁을 제공해드려요.",
+    highlight: "매달 소비 리포트 자동 생성",
+  },
+  {
+    bg: "#8B5CF615",
+    accent: "#8B5CF6",
+    visual: (
+      <div className="w-[100px] h-[100px] rounded-[28px] bg-[#8B5CF615] flex items-center justify-center">
+        <Subby size={64} mood="happy" />
+      </div>
+    ),
+    badge: "게이미피케이션",
+    title: "써비와 함께\n돈 관리가 즐거워져요",
+    desc: "지출을 기록할수록 XP를 모으고\n레벨이 올라가요. 매일 미션도 있어요!",
+    highlight: "지금 바로 레벨 1 시작",
   },
 ];
 
@@ -57,48 +90,80 @@ export default function Onboarding({ onComplete }: { onComplete: () => void }) {
   const slide = slides[current];
 
   return (
-    <div className="fixed inset-0 z-[60] bg-bg-primary flex flex-col items-center justify-between px-8 py-16 animate-fade-in-up">
+    <div className="fixed inset-0 z-[60] bg-bg-primary flex flex-col">
       {/* Skip */}
-      <div className="w-full flex justify-end">
-        <button
-          onClick={handleSkip}
-          className="text-[13px] text-text-tertiary pressable"
-        >
+      <div className="flex justify-end px-6 pt-6 shrink-0">
+        <button onClick={handleSkip} className="text-[13px] text-text-tertiary pressable px-2 py-1">
           건너뛰기
         </button>
       </div>
 
       {/* Content */}
-      <div className="flex-1 flex flex-col items-center justify-center text-center">
+      <div className="flex-1 flex flex-col items-center justify-center px-8 text-center">
+        {/* Visual */}
         <div
-          className="w-24 h-24 rounded-[28px] flex items-center justify-center mb-8 transition-all duration-300"
-          style={{ backgroundColor: `${slide.color}15` }}
+          key={`visual-${current}`}
+          className="mb-8 animate-fade-in-up"
         >
-          {current === 2 ? (
-            <Subby size={64} mood="thinking" />
-          ) : (
-            <span className="text-[48px]">{slide.emoji}</span>
-          )}
+          {slide.visual}
         </div>
-        <h2 className="text-[24px] font-bold text-text-primary mb-3">
+
+        {/* Badge */}
+        <div
+          key={`badge-${current}`}
+          className="animate-fade-in-up mb-3"
+          style={{ animationDelay: "60ms" }}
+        >
+          <span
+            className="text-[11px] font-bold uppercase tracking-wider px-3 py-1 rounded-full"
+            style={{ color: slide.accent, backgroundColor: slide.bg }}
+          >
+            {slide.badge}
+          </span>
+        </div>
+
+        {/* Title */}
+        <h2
+          key={`title-${current}`}
+          className="text-[24px] font-bold text-text-primary leading-tight mb-3 whitespace-pre-line animate-fade-in-up"
+          style={{ animationDelay: "100ms" }}
+        >
           {slide.title}
         </h2>
-        <p className="text-[15px] text-text-secondary leading-relaxed whitespace-pre-line">
+
+        {/* Desc */}
+        <p
+          key={`desc-${current}`}
+          className="text-[14px] text-text-secondary leading-relaxed whitespace-pre-line animate-fade-in-up"
+          style={{ animationDelay: "140ms" }}
+        >
           {slide.desc}
         </p>
+
+        {/* Highlight */}
+        <div
+          key={`hl-${current}`}
+          className="mt-5 px-4 py-2.5 rounded-[10px] animate-fade-in-up"
+          style={{ backgroundColor: slide.bg, animationDelay: "180ms" }}
+        >
+          <p className="text-[13px] font-semibold" style={{ color: slide.accent }}>
+            ✓ {slide.highlight}
+          </p>
+        </div>
       </div>
 
       {/* Bottom */}
-      <div className="w-full space-y-5">
+      <div className="px-8 pb-10 shrink-0 space-y-5">
         {/* Dots */}
         <div className="flex items-center justify-center gap-2">
           {slides.map((_, i) => (
-            <div
+            <button
               key={i}
+              onClick={() => setCurrent(i)}
               className="h-2 rounded-full transition-all duration-300"
               style={{
-                width: i === current ? 24 : 8,
-                backgroundColor: i === current ? slide.color : "var(--color-border)",
+                width: i === current ? 28 : 8,
+                backgroundColor: i === current ? slide.accent : "var(--color-border)",
               }}
             />
           ))}
@@ -107,13 +172,10 @@ export default function Onboarding({ onComplete }: { onComplete: () => void }) {
         {/* Button */}
         <button
           onClick={handleNext}
-          className="w-full py-[14px] bg-accent text-text-inverse font-semibold text-[15px] rounded-[12px] pressable hover:bg-accent-hover transition-colors flex items-center justify-center gap-1"
+          className="w-full py-[15px] font-bold text-[16px] rounded-[14px] pressable transition-colors text-white"
+          style={{ backgroundColor: slide.accent }}
         >
-          {current < slides.length - 1 ? (
-            <>다음 <ChevronRight size={16} /></>
-          ) : (
-            "시작하기"
-          )}
+          {current < slides.length - 1 ? "다음" : "시작하기 🚀"}
         </button>
       </div>
     </div>

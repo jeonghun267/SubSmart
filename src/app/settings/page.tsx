@@ -52,11 +52,13 @@ export default function SettingsPage() {
   const [userIsPremium, setUserIsPremium] = useState(false);
   const [billingNoti, setBillingNoti] = useState(true);
   const [budgetNoti, setBudgetNoti] = useState(true);
+  const [billingNotiDays, setBillingNotiDays] = useState<number>(1);
 
   useEffect(() => {
     setUserIsPremium(isPremium());
     setBillingNoti(localStorage.getItem("subsmart_billing_noti") !== "false");
     setBudgetNoti(localStorage.getItem("subsmart_budget_noti") !== "false");
+    setBillingNotiDays(parseInt(localStorage.getItem("subsmart_billing_noti_days") || "1", 10));
   }, []);
 
   useEffect(() => {
@@ -247,7 +249,33 @@ export default function SettingsPage() {
           <ChevronRight size={16} className="text-text-tertiary shrink-0" />
         </button>
 
-        {/* TODO: 프리미엄 결제 연동 후 활성화 */}
+        {/* Premium */}
+        {!userIsPremium ? (
+          <button
+            onClick={() => router.push("/premium")}
+            className="w-full flex items-center gap-3.5 px-5 py-4 text-left hover:bg-bg-primary/50 transition-colors pressable border-b border-border"
+          >
+            <div className="w-8 h-8 rounded-[8px] bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center shrink-0">
+              <Crown size={16} className="text-amber-500" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-[14px] font-medium text-text-primary">프리미엄 업그레이드</p>
+              <p className="text-[12px] text-text-tertiary mt-0.5">AI 무제한 · 시뮬레이터 · 목표 관리</p>
+            </div>
+            <span className="text-[11px] font-bold text-amber-500 bg-amber-100 dark:bg-amber-900/30 px-2 py-0.5 rounded-full">PRO</span>
+          </button>
+        ) : (
+          <div className="flex items-center gap-3.5 px-5 py-4 border-b border-border">
+            <div className="w-8 h-8 rounded-[8px] bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center shrink-0">
+              <Crown size={16} className="text-amber-500" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-[14px] font-medium text-text-primary">프리미엄 이용 중</p>
+              <p className="text-[12px] text-text-tertiary mt-0.5">모든 기능을 이용할 수 있어요</p>
+            </div>
+            <Check size={18} className="text-amber-500" />
+          </div>
+        )}
 
         {/* Export */}
         <button
@@ -367,31 +395,62 @@ export default function SettingsPage() {
       {/* Notification Bottom Sheet */}
       <BottomSheet open={showNoti} onClose={() => setShowNoti(false)} title="알림 설정">
         <div className="space-y-5">
-          <div className="flex items-center justify-between p-4 bg-bg-primary rounded-[12px] border border-border">
-            <div className="flex items-center gap-3">
-              <Bell size={20} className="text-text-secondary" />
-              <div>
-                <p className="text-[14px] font-medium text-text-primary">결제일 알림</p>
-                <p className="text-[12px] text-text-tertiary mt-0.5">구독 결제 1일 전 알림</p>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between p-4 bg-bg-primary rounded-[12px] border border-border">
+              <div className="flex items-center gap-3">
+                <Bell size={20} className="text-text-secondary" />
+                <div>
+                  <p className="text-[14px] font-medium text-text-primary">결제일 알림</p>
+                  <p className="text-[12px] text-text-tertiary mt-0.5">구독 결제 전 미리 알림</p>
+                </div>
               </div>
-            </div>
-            <button
-              onClick={async () => {
-                if (!notiEnabled) await enableNotifications();
-                const next = !billingNoti;
-                setBillingNoti(next);
-                localStorage.setItem("subsmart_billing_noti", String(next));
-              }}
-              className={`w-12 h-7 rounded-full transition-colors relative ${
-                notiEnabled && billingNoti ? "bg-accent" : "bg-border"
-              }`}
-            >
-              <div
-                className={`absolute top-0.5 w-6 h-6 bg-white rounded-full shadow-sm transition-transform ${
-                  notiEnabled && billingNoti ? "translate-x-5" : "translate-x-0.5"
+              <button
+                onClick={async () => {
+                  if (!notiEnabled) await enableNotifications();
+                  const next = !billingNoti;
+                  setBillingNoti(next);
+                  localStorage.setItem("subsmart_billing_noti", String(next));
+                }}
+                className={`w-12 h-7 rounded-full transition-colors relative ${
+                  notiEnabled && billingNoti ? "bg-accent" : "bg-border"
                 }`}
-              />
-            </button>
+              >
+                <div
+                  className={`absolute top-0.5 w-6 h-6 bg-white rounded-full shadow-sm transition-transform ${
+                    notiEnabled && billingNoti ? "translate-x-5" : "translate-x-0.5"
+                  }`}
+                />
+              </button>
+            </div>
+
+            {/* 알림 시간 선택 */}
+            {billingNoti && (
+              <div className="px-1">
+                <p className="text-[12px] text-text-tertiary mb-2">알림 시점</p>
+                <div className="flex gap-2">
+                  {[
+                    { value: 3, label: "3일 전" },
+                    { value: 1, label: "1일 전" },
+                    { value: 0, label: "당일" },
+                  ].map(({ value, label }) => (
+                    <button
+                      key={value}
+                      onClick={() => {
+                        setBillingNotiDays(value);
+                        localStorage.setItem("subsmart_billing_noti_days", String(value));
+                      }}
+                      className={`flex-1 py-2.5 rounded-[10px] text-[13px] font-medium border transition-all pressable ${
+                        billingNotiDays === value
+                          ? "bg-accent text-white border-accent"
+                          : "bg-bg-primary text-text-secondary border-border"
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="flex items-center justify-between p-4 bg-bg-primary rounded-[12px] border border-border">

@@ -20,7 +20,10 @@ import {
   Target,
   Flame,
   Wallet,
+  Share2,
+  Plus,
 } from "lucide-react";
+import { shareToss } from "@/lib/apps-in-toss";
 import Link from "next/link";
 import AnimatedNumber from "@/components/AnimatedNumber";
 import DonutChart from "@/components/DonutChart";
@@ -527,7 +530,52 @@ export default function DashboardPage() {
             </div>
           )}
         </div>
+
+        {/* 공유 버튼 */}
+        {totalSpending > 0 && (
+          <button
+            onClick={() => shareToss({
+              title: "이번 달 SubSmart 지출 현황",
+              text: `이번 달 총 ${totalSpending.toLocaleString()}원 지출 (구독 ${Math.round(totalMonthlySubscription).toLocaleString()}원 포함) — SubSmart으로 관리 중`,
+              url: "https://sub-smart-delta.vercel.app",
+            })}
+            className="mt-4 relative z-10 flex items-center gap-1.5 text-white/70 text-[12px] pressable hover:text-white transition-colors"
+          >
+            <Share2 size={13} />
+            공유하기
+          </button>
+        )}
       </div>
+
+      {/* 첫 방문 Empty State — 구독도 거래도 없을 때 */}
+      {subscriptions.length === 0 && transactions.length === 0 && (
+        <div className="bg-bg-card rounded-[16px] p-5 border border-accent/20 border-dashed">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-10 h-10 rounded-[12px] bg-accent-soft flex items-center justify-center shrink-0">
+              <Sparkles size={20} className="text-accent" />
+            </div>
+            <div>
+              <p className="text-[14px] font-bold text-text-primary">시작이 반이에요!</p>
+              <p className="text-[12px] text-text-tertiary mt-0.5">첫 구독을 추가하면 모든 기능이 활성화돼요</p>
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Link
+              href="/subscriptions"
+              className="flex items-center justify-between w-full bg-accent text-white px-4 py-3 rounded-[12px] pressable"
+            >
+              <div className="flex items-center gap-2">
+                <Plus size={16} />
+                <span className="text-[14px] font-semibold">첫 구독 추가하기</span>
+              </div>
+              <ChevronRight size={16} />
+            </Link>
+            <p className="text-[11px] text-text-tertiary text-center">
+              넷플릭스, 유튜브 프리미엄 등 인기 구독을 빠르게 추가할 수 있어요
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Budget Progress */}
       {totalBudget > 0 && (

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { format } from "date-fns";
 import { supabase } from "@/lib/supabase";
 import { CATEGORIES } from "@/lib/types";
@@ -12,6 +12,7 @@ import MoneyInput from "./MoneyInput";
 import { showToast } from "./Toast";
 import { completeQuestWithReward, incrementRecordCount } from "@/lib/daily-quest";
 import OfflineBanner from "./OfflineBanner";
+import { initGamification, syncGamification, initPremium } from "@/lib/gamification-sync";
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   return (
@@ -27,6 +28,32 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
   const [quickAmount, setQuickAmount] = useState(0);
   const [quickCategory, setQuickCategory] = useState("food");
   const [quickSaving, setQuickSaving] = useState(false);
+  const syncTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // 앱 시작 시 서버에서 게이미피케이션 + 프리미엄 상태 로드
+  useEffect(() => {
+    if (!user) return;
+    initGamification(user.id);
+    initPremium(user.id);
+  }, [user?.id]);
+
+  // 퀘스트/XP 변경 시 디바운스(2초) 후 서버 동기화
+  useEffect(() => {
+    if (!user) return;
+    function scheduledSync() {
+      if (syncTimerRef.current) clearTimeout(syncTimerRef.current);
+      syncTimerRef.current = setTimeout(() => {
+        if (user) syncGamification(user.id);
+      }, 2000);
+    }
+    window.addEventListener("subsmart:quest-update", scheduledSync);
+    window.addEventListener("subsmart:xp-update", scheduledSync);
+    return () => {
+      window.removeEventListener("subsmart:quest-update", scheduledSync);
+      window.removeEventListener("subsmart:xp-update", scheduledSync);
+      if (syncTimerRef.current) clearTimeout(syncTimerRef.current);
+    };
+  }, [user?.id]);
 
   function handleOpenQuickAdd() {
     setQuickAmount(0);
